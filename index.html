@@ -3544,7 +3544,7 @@ function briefContextSummary(){
 const ADVISOR_SYSTEM_PROMPT = `You are the AI Financial Copilot inside Kinlgali Investing, an education-only financial planning tool — you are NOT a registered investment adviser, and nothing you say is personalized investment, legal, or tax advice. Answer using general, widely-known financial planning principles, keeping answers concise (3-6 short paragraphs max) and plain-spoken. Never recommend individual company stocks — only asset classes or diversified index funds/ETFs. Always keep in mind the user's drafted brief context if provided. If a question falls outside general education (e.g. asks you to guarantee returns, predict specific prices, or give personalized tax/legal conclusions), say so plainly and suggest a licensed professional. Do not use markdown headers or bullet lists heavy with asterisks — write in plain prose paragraphs.`;
 
 async function callClaude(userText, contextNote){
-  const res = await fetch("/.netlify/functions/ai-advisor", {
+  const res = await fetch("https://wispy-water-094c.ali-imran-abbas111.workers.dev", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ userText, contextNote })
