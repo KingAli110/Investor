@@ -1689,7 +1689,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
 
       <div class="tier" data-plan="monthly">
         <div class="tier-name mono">Monthly</div>
-        <div class="tier-price serif">$14.99 <span>/ mo</span></div>
+        <div class="tier-price serif">$5.99 <span>/ mo</span></div>
         <div class="tier-save mono">7-day free trial included</div>
         <ul>
           <li>Everything in Free</li>
@@ -1707,7 +1707,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
       <div class="tier featured" data-plan="yearly">
         <div class="tier-badge">Preferred</div>
         <div class="tier-name mono">Yearly</div>
-        <div class="tier-price serif">$214.99 <span>/ yr</span></div>
+        <div class="tier-price serif">$101.99 <span>/ yr</span></div>
         <div class="tier-save mono">1-month free trial included</div>
         <ul>
           <li>Everything in Premium Monthly</li>
@@ -3304,8 +3304,8 @@ document.addEventListener('keydown', (e)=>{
    ========================================================= */
 const PLAN_INFO = {
   weekly:  {name:'Free', price:'Free', needsCheckout:false},
-  monthly: {name:'Monthly', price:'$14.99 / mo — first 7 days free', needsCheckout:true, trialDays:7, trialLabel:'7-day'},
-  yearly:  {name:'Yearly', price:'$214.99 / yr — first month free', needsCheckout:true, trialDays:30, trialLabel:'1-month'}
+  monthly: {name:'Monthly', price:'$5.99 / mo — first 7 days free', needsCheckout:true, trialDays:7, trialLabel:'7-day'},
+  yearly:  {name:'Yearly', price:'$101.99 / yr — first month free', needsCheckout:true, trialDays:30, trialLabel:'1-month'}
 };
 
 function handlePlanSelect(plan){
