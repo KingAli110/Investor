@@ -992,15 +992,6 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
     </div>
   </div>
 
-  <div class="plan-bar">
-    <div class="plan-bar-label">Viewing As — <span id="planLabel" style="color:var(--brass);">Free Plan</span></div>
-    <div class="plan-switch" id="planSwitch">
-      <div class="plan-chip active" data-plan="weekly">Free</div>
-      <div class="plan-chip" data-plan="monthly">Monthly</div>
-      <div class="plan-chip" data-plan="yearly">Yearly</div>
-    </div>
-  </div>
-
   <div class="hero" id="topHero">
     <div class="hero-motes">
       <div class="mote" style="width:5px; height:5px; top:18%; left:12%; animation-duration:9s;"></div>
@@ -2724,8 +2715,6 @@ function hasFullPremium(plan){ return plan==='monthly' || plan==='yearly'; } // 
 
 function setPlan(plan){
   currentPlan = plan;
-  document.getElementById('planLabel').textContent = planLabelMap[plan];
-  document.querySelectorAll('.plan-chip').forEach(c=>c.classList.toggle('active', c.dataset.plan===plan));
   document.querySelectorAll('.tier').forEach(t=>{
     t.classList.toggle('current', t.dataset.plan===plan);
   });
@@ -2734,11 +2723,6 @@ function setPlan(plan){
   refreshUsagePanel();
   renderLearningCenter();
 }
-
-document.getElementById('planSwitch').addEventListener('click', (e)=>{
-  const chip = e.target.closest('.plan-chip');
-  if(chip) setPlan(chip.dataset.plan);
-});
 
 function applyGating(){
   const hist = hasHistory(currentPlan);
@@ -3322,7 +3306,7 @@ function proceedAfterAuth(plan){
     setPlan(plan);
     closeAuthModal();
     closeCheckoutModal();
-    document.getElementById('planLabel').scrollIntoView({behavior:'smooth', block:'center'});
+    document.getElementById('pricing').scrollIntoView({behavior:'smooth', block:'center'});
   }
 }
 
