@@ -3413,7 +3413,7 @@ async function submitCheckout(){
 
   try{
     const email = currentUser ? currentUser.email : (document.getElementById('ccEmail')?.value.trim() || undefined);
-    const res = await fetch('/.netlify/functions/create-checkout-session', {
+    const res = await fetch('https://curly-hat-e568.ali-imran-abbas111.workers.dev/create-checkout-session', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ plan: pendingPlan, email })
@@ -3505,7 +3505,7 @@ async function refreshPromoBanner(){
   const banner = document.getElementById('promoBanner');
   if(!el) return;
   try{
-    const res = await fetch('/.netlify/functions/get-promo-status');
+    const res = await fetch('https://curly-hat-e568.ali-imran-abbas111.workers.dev/get-promo-status');
     if(!res.ok) throw new Error('bad response');
     const data = await res.json();
     if(!data.active){
