@@ -55,6 +55,7 @@ body::before{
   pointer-events:none;
 }
 .site-motes{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none;}
+#constellationCanvas{position:absolute; inset:0; width:100%; height:100%;}
 
 .serif{font-family:'Fraunces',serif;}
 .mono{font-family:'IBM Plex Mono',monospace;}
@@ -216,6 +217,23 @@ nav{
   100%{transform:translateY(0) translateX(0); opacity:.15;}
 }
 .hero-eyebrow, .hero h1, .hero p.lede, .hero-actions{position:relative; z-index:1;}
+.hero-graph{position:absolute; right:-40px; bottom:0; width:56%; max-width:460px; height:130px; z-index:0; opacity:.85; pointer-events:none;
+  animation:heroGraphFloat 6s ease-in-out infinite 2.9s;}
+@keyframes heroGraphFloat{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-8px); }
+}
+.hero-graph-line{stroke:var(--brass); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:620; stroke-dashoffset:620; animation:drawLine 2.6s cubic-bezier(.16,1,.3,1) forwards .3s;}
+@keyframes drawLine{ to{ stroke-dashoffset:0; } }
+.hero-graph-dot{fill:var(--verdigris); opacity:0; animation:dotPop .5s ease forwards 1.8s;}
+@keyframes dotPop{ 0%{opacity:0; r:1;} 60%{opacity:1; r:5;} 100%{opacity:1; r:3.5;} }
+@media (max-width:760px){ .hero-graph{display:none;} }
+@media (prefers-reduced-motion: reduce){
+  .hero-graph{animation:none;}
+  .hero-graph-line{animation:none; stroke-dashoffset:0;}
+  .hero-graph-dot{animation:none; opacity:1;}
+}
 .hero-eyebrow{
   font-family:'IBM Plex Mono',monospace; font-size:11.5px;
   letter-spacing:.16em; text-transform:uppercase; color:var(--verdigris);
@@ -748,6 +766,33 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
 .promo-banner{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; border:1px solid var(--brass); background:rgba(180,140,60,.08); padding:16px 20px; margin:20px 0 28px;}
 .promo-text{font-size:14px; color:var(--ink);}
 .promo-count{font-size:11.5px; color:var(--crimson); white-space:nowrap;}
+
+/* ---------- FINANCIAL HEALTH SCORE ---------- */
+.health-score-shell{display:grid; grid-template-columns:minmax(200px,.7fr) minmax(260px,1.3fr); gap:26px; align-items:center; border:1px solid var(--hair); background:#FFFFFF; padding:24px;}
+.health-ring-wrap{display:flex; flex-direction:column; align-items:center; gap:10px;}
+.health-ring-num{font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--ink);}
+.health-ring circle.track{fill:none; stroke:var(--hair); stroke-width:10;}
+.health-ring circle.fill{fill:none; stroke-width:10; stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1), stroke 0.4s;}
+.health-breakdown{display:flex; flex-direction:column; gap:12px;}
+.health-bar-row{display:grid; grid-template-columns:130px 1fr 40px; align-items:center; gap:10px; font-size:12.5px;}
+.health-bar-label{color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em;}
+.health-bar-track{height:8px; background:var(--panel); overflow:hidden;}
+.health-bar-fill{height:100%; background:var(--brass); width:0%; transition:width 1s cubic-bezier(.16,1,.3,1);}
+.health-bar-num{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); text-align:right;}
+.health-tips{grid-column:1 / -1; border-top:1px solid var(--hair); padding-top:16px; margin-top:6px; font-size:13.5px; line-height:1.6; color:var(--ink-soft);}
+@media (max-width:760px){ .health-score-shell{grid-template-columns:1fr; justify-items:center; text-align:center;} .health-bar-row{grid-template-columns:110px 1fr 34px;} }
+
+/* ---------- FINANCIAL CALENDAR ---------- */
+.calendar-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
+.calendar-card{border:1px solid var(--hair); background:#FFFFFF; padding:16px; border-left:3px solid var(--brass);}
+.calendar-card .cal-date{font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--brass); margin-bottom:6px;}
+.calendar-card h5{font-family:'Fraunces',serif; font-size:15.5px; margin:0 0 6px; font-weight:600;}
+.calendar-card p{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:0;}
+
+/* ---------- SCROLL REVEAL ---------- */
+.reveal{opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease;}
+.reveal.in-view{opacity:1; transform:translateY(0);}
+@media (prefers-reduced-motion: reduce){ .reveal{opacity:1; transform:none; transition:none;} }
 </style>
 <script type="module">
   // Real Firebase project — Google Sign-In actually authenticates against
@@ -838,6 +883,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
 <body>
 
 <div class="site-motes">
+  <canvas id="constellationCanvas"></canvas>
   <div class="mote" style="width:4px; height:4px; top:8%; left:6%; animation-duration:16s;"></div>
   <div class="mote" style="width:3px; height:3px; top:22%; left:92%; animation-duration:19s; animation-delay:2s;"></div>
   <div class="mote" style="width:5px; height:5px; top:38%; left:3%; animation-duration:14s; animation-delay:4s;"></div>
@@ -1003,7 +1049,13 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
     </div>
     <div class="hero-eyebrow">Formal Financial Planning Counsel</div>
     <h1 class="serif">Deliberate strategy, <em>drafted</em> around the date you need your money.</h1>
-    <p class="lede">State your objective and your timeline. We will draft the account structure and allocation model suited to it — the same discipline a private planning desk would apply, delivered as a formal brief in moments.</p>
+    <p class="lede">State your goal and timeline — we draft the account structure and allocation to match, in moments.</p>
+    <svg class="hero-graph" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+      <polyline class="hero-graph-line" points="0,95 55,80 100,88 150,55 200,62 250,30 300,38 350,12 400,20" fill="none"/>
+      <circle class="hero-graph-dot" cx="150" cy="55" r="3.5"/>
+      <circle class="hero-graph-dot" cx="250" cy="30" r="3.5" style="animation-delay:.6s;"/>
+      <circle class="hero-graph-dot" cx="350" cy="12" r="3.5" style="animation-delay:1.2s;"/>
+    </svg>
     <div class="hero-actions">
       <button class="btn btn-solid" onclick="document.getElementById('brief').scrollIntoView({behavior:'smooth'})">Begin Your Consultation</button>
       <button class="btn install-btn" style="display:none;" onclick="triggerInstallPrompt()">Install App</button>
@@ -1017,7 +1069,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
       <div class="exhibit-mark mono">ABOUT</div>
       <h2>The Desk's Approach</h2>
     </div>
-    <p class="section-sub">Kinlgali Investing is an education-only planning tool. The free version gives every user a basic goal-based strategy and an initial portfolio recommendation; premium membership turns that starting point into an ongoing review desk that evolves with their financial life.</p>
+    <p class="section-sub">Free gives you a basic goal-based strategy and portfolio recommendation. Premium turns that into an ongoing review desk that evolves with your finances.</p>
     <div class="about-grid">
       <div class="about-cell">
         <div class="mk">Principle 01</div>
@@ -1362,6 +1414,20 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
       <div class="dash-grid" id="dashGrid"></div>
 
       <div class="section-head" style="margin-top:36px;">
+        <div class="exhibit-mark mono">HEALTH SCORE</div>
+        <h2 style="font-size:22px;">Financial Health Score</h2>
+      </div>
+      <p class="section-sub">A single composite number — from your most recent brief — covering diversification, cash-reserve readiness, contribution consistency, and risk-to-timeline fit.</p>
+      <div class="health-score-shell" id="healthScoreShell"></div>
+
+      <div class="section-head" style="margin-top:36px;">
+        <div class="exhibit-mark mono">CALENDAR</div>
+        <h2 style="font-size:22px;">Financial Calendar</h2>
+      </div>
+      <p class="section-sub">General recurring dates worth planning around — not personalized to your specific holdings.</p>
+      <div class="calendar-grid" id="financialCalendarGrid"></div>
+
+      <div class="section-head" style="margin-top:36px;">
         <div class="exhibit-mark mono">MILESTONES</div>
         <h2 style="font-size:22px;">Progress Milestones</h2>
       </div>
@@ -1389,7 +1455,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
       <div class="exhibit-mark mono">EXHIBIT L</div>
       <h2>AI Financial Copilot</h2>
     </div>
-    <p class="section-sub">Premium members get a 24/7 conversational coach that answers questions using the user's drafted brief, saved goals, contribution assumptions, and portfolio context. It can explain market events, goal progress, rebalancing ideas, tax-efficiency concepts, and what-if scenarios in plain English.</p>
+    <p class="section-sub">A 24/7 conversational coach using your drafted brief, goals, and portfolio context — explains market events, rebalancing ideas, and what-if scenarios in plain English.</p>
     <div class="gated" id="aiAdvisorUnlocked">
       <div class="ai-suggest-row">
         <div class="ai-suggest-chip" onclick="sendAdvisorSuggestion(this)">Am I on track for retirement?</div>
@@ -1541,7 +1607,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
       <div class="exhibit-mark mono">PRICE LOOKUP</div>
       <h2>Current Ticker Price</h2>
     </div>
-    <p class="section-sub">Look up any ticker's actual current price, pulled live. This shows what something costs right now — it is not, and does not attempt to be, a judgment on whether that price is a good buy. Whether a price represents good value depends on earnings, growth, and dozens of other factors this tool does not evaluate.</p>
+    <p class="section-sub">Look up any ticker's live current price — not a judgment on whether it's a good buy.</p>
 
     <div class="price-key-notice" id="priceKeyNotice">
       This widget calls two free APIs directly from your browser: <strong>Finnhub</strong> for the current price, and <strong>Twelve Data</strong> for the 1Y/2Y history below (Finnhub's free tier no longer includes historical charts for US stocks). Get free keys at <a href="https://finnhub.io/register" target="_blank" rel="noopener" style="color:var(--brass);">finnhub.io/register</a> and <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener" style="color:var(--brass);">twelvedata.com/pricing</a> (both free, no card required), then paste them into the <code>FINNHUB_API_KEY</code> and <code>TWELVEDATA_API_KEY</code> constants near the bottom of this file.
@@ -1655,7 +1721,7 @@ table.compare-table th, table.compare-table td{padding:10px 14px; border-bottom:
       <div class="exhibit-mark mono">TERMS</div>
       <h2>Continued Counsel</h2>
     </div>
-    <p class="section-sub">The Free plan gives every user a basic personalized strategy and initial portfolio recommendation. Premium Monthly and Yearly turn the platform into an ongoing financial service with AI reviews, market-aware alerts, portfolio monitoring, and goal tracking that continue after the first draft.</p>
+    <p class="section-sub">Free gives you a basic strategy and recommendation. Premium adds AI reviews, market-aware alerts, and ongoing goal tracking.</p>
 
     <div class="promo-banner" id="promoBanner">
       <div class="promo-text"><strong>Founding Member Offer</strong> — the first 500 customers get 50% off their first payment on Monthly or Yearly.</div>
@@ -2871,6 +2937,7 @@ async function loadHistory(){
     if(dashGrid) dashGrid.innerHTML = '<div class="empty-state">Sign in to track goals across visits.</div>';
     window._briefHistoryCache = [];
     renderMilestones([]);
+    renderFinancialHealthScore([]);
     populateCompareSelects([]);
     return;
   }
@@ -2905,7 +2972,7 @@ async function loadHistory(){
       const latestByGoal = {};
       entries.forEach(e=>{ if(!latestByGoal[e.goal]) latestByGoal[e.goal]=e; });
       dashGrid.innerHTML = Object.values(latestByGoal).map(e=>`
-        <div class="dash-card">
+        <div class="dash-card reveal">
           <div class="tag mono">${e.years} yrs remaining</div>
           <h4>${goalLabelMap[e.goal]||e.goal}</h4>
           <div class="dash-stat"><span>Monthly Contribution</span><span>${fmt(e.monthly)}</span></div>
@@ -2917,7 +2984,123 @@ async function loadHistory(){
 
   window._briefHistoryCache = entries;
   renderMilestones(entries);
+  renderFinancialHealthScore(entries);
   populateCompareSelects(entries);
+  initScrollReveal();
+}
+
+/* ---------- Financial Health Score ----------
+   A composite, educational estimate built only from the inputs you've
+   already provided in your most recent saved brief — not a credit
+   score, not a real audit of your actual finances, and not connected
+   to any account outside this tool. */
+function computeFinancialHealthScore(entries){
+  if(!entries || entries.length===0) return null;
+  const e = entries[0]; // most recent brief
+  const alloc = e.alloc || {usEq:0,intlEq:0,bonds:0,cash:0};
+
+  // Diversification: how many asset classes carry a meaningful (>=10%) weight
+  const classesUsed = [alloc.usEq, alloc.intlEq, alloc.bonds, alloc.cash].filter(p=>p>=10).length;
+  const diversificationScore = classesUsed>=4?25 : classesUsed===3?18 : classesUsed===2?10 : classesUsed===1?4 : 0;
+
+  // Emergency-fund proxy: cash allocation within this plan (not a substitute for a true separate emergency fund)
+  const cashPct = alloc.cash || 0;
+  const emergencyScore = cashPct>=10?25 : cashPct>=5?15 : cashPct>0?8 : 0;
+
+  // Consistency: size of the recurring monthly contribution
+  const monthly = e.monthly || 0;
+  const consistencyScore = monthly>=500?25 : monthly>=200?18 : monthly>=50?10 : monthly>0?5 : 0;
+
+  // Risk-to-timeline fit: how close the Risk Score is to a rough age/timeline-appropriate band
+  const idealRisk = Math.min(90, Math.max(20, (e.years||0)*4));
+  const diff = Math.abs((e.riskScore||0) - idealRisk);
+  const fitScore = Math.max(0, 25 - Math.round(diff/4));
+
+  const total = diversificationScore + emergencyScore + consistencyScore + fitScore;
+
+  const breakdown = [
+    {label:'Diversification', score:diversificationScore},
+    {label:'Cash Reserve', score:emergencyScore},
+    {label:'Contribution Size', score:consistencyScore},
+    {label:'Risk-to-Timeline Fit', score:fitScore},
+  ];
+  const weakest = breakdown.reduce((a,b)=> b.score<a.score ? b : a);
+  const tips = {
+    'Diversification': 'Consider spreading this plan across more asset classes — right now one or two categories dominate the mix.',
+    'Cash Reserve': 'A larger cash allocation (or a separate emergency fund outside this plan) can add a cushion before market risk.',
+    'Contribution Size': 'Even a modest increase to your monthly contribution compounds meaningfully over a multi-year horizon.',
+    'Risk-to-Timeline Fit': 'Your Risk Score and years-to-goal look somewhat mismatched — revisit Exhibit B to see if this still reflects your comfort level.',
+  }[weakest.label];
+
+  return { total, breakdown, tip: tips, goal: e.goal };
+}
+
+function renderFinancialHealthScore(entries){
+  const shell = document.getElementById('healthScoreShell');
+  if(!shell) return;
+  const result = computeFinancialHealthScore(entries);
+  if(!result){
+    shell.innerHTML = '<div class="empty-state">Draft and save a brief to generate your Financial Health Score.</div>';
+    return;
+  }
+  const { total, breakdown, tip, goal } = result;
+  const color = total>=75 ? 'var(--verdigris)' : total>=50 ? 'var(--brass)' : 'var(--crimson)';
+  const radius = 52, circumference = 2*Math.PI*radius;
+
+  shell.innerHTML = `
+    <div class="health-ring-wrap">
+      <svg class="health-ring" width="140" height="140" viewBox="0 0 140 140">
+        <circle class="track" cx="70" cy="70" r="${radius}"/>
+        <circle class="fill" id="healthRingFill" cx="70" cy="70" r="${radius}"
+          stroke="${color}" stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"/>
+        <text x="70" y="76" text-anchor="middle" font-family="Fraunces, serif" font-weight="600" font-size="34" fill="var(--ink)">${total}</text>
+      </svg>
+      <div class="health-ring-num">out of 100 — based on ${goalLabelMap[goal]||goal}</div>
+    </div>
+    <div class="health-breakdown">
+      ${breakdown.map(b=>`
+        <div class="health-bar-row">
+          <div class="health-bar-label">${b.label}</div>
+          <div class="health-bar-track"><div class="health-bar-fill" data-target="${b.score*4}" style="width:0%;"></div></div>
+          <div class="health-bar-num">${b.score}/25</div>
+        </div>`).join('')}
+      <div class="health-tips"><strong>Where to focus next:</strong> ${tip} This score is an educational estimate from the inputs in your latest brief only — it is not a credit score and does not see any real account balances.</div>
+    </div>`;
+
+  // Animate the ring + bars in on a short delay so the draw is visible
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      const ring = document.getElementById('healthRingFill');
+      if(ring) ring.style.strokeDashoffset = circumference - (total/100)*circumference;
+      shell.querySelectorAll('.health-bar-fill').forEach(bar=>{
+        bar.style.width = bar.dataset.target + '%';
+      });
+    }, 80);
+  });
+}
+
+/* ---------- Financial Calendar ----------
+   General, recurring dates worth planning around. Not personalized —
+   this tool doesn't have visibility into your actual accounts, so it
+   can't know your specific ex-dividend dates or filing status. */
+function renderFinancialCalendar(){
+  const grid = document.getElementById('financialCalendarGrid');
+  if(!grid) return;
+  const year = new Date().getFullYear();
+  const items = [
+    {date:`Jan 1, ${year}`, title:'New Tax Year Begins', note:'A good prompt to revisit contribution limits and this year\u2019s goals.'},
+    {date:`Apr 15, ${year}`, title:'U.S. Tax Filing Deadline', note:'Typical federal filing deadline — confirm the exact date each year, as it can shift.'},
+    {date:'Quarterly', title:'Portfolio Review Checkpoint', note:'A recurring prompt to revisit Exhibit F\u2019s rebalancing schedule.'},
+    {date:'Ongoing', title:'Dividend Payment Dates', note:'Ex-dividend and payment dates vary by fund — check your brokerage or the fund provider directly.'},
+    {date:`Dec 31, ${year}`, title:'Tax-Loss Harvesting Window Closes', note:'Many harvesting strategies must be executed before year-end — see Exhibit E.'},
+  ];
+  grid.innerHTML = items.map(i=>`
+    <div class="calendar-card reveal">
+      <div class="cal-date">${i.date}</div>
+      <h5>${i.title}</h5>
+      <p>${i.note}</p>
+    </div>`).join('');
+  initScrollReveal();
 }
 
 /* ---------- Achievement Milestones ---------- */
@@ -2948,7 +3131,10 @@ const LEARNING_PATHS = [
     questions:[
       {q:'What is the main advantage of investing through a diversified fund?', a:['It spreads exposure across many holdings','It guarantees a positive return','It removes all market risk'], correct:0, note:'Diversification spreads company-specific risk, but it does not eliminate market risk.'},
       {q:'Why does time horizon matter when choosing an allocation?', a:['Longer horizons can usually tolerate more short-term volatility','It tells you which single stock will win','It makes inflation irrelevant'], correct:0, note:'A longer horizon gives a portfolio more time to recover from normal market declines.'},
-      {q:'What is rebalancing meant to do?', a:['Bring a portfolio back toward its target mix','Chase whichever asset performed best yesterday','Avoid taxes in every situation'], correct:0, note:'Rebalancing is a disciplined way to manage drift, not a prediction tool.'}
+      {q:'What is rebalancing meant to do?', a:['Bring a portfolio back toward its target mix','Chase whichever asset performed best yesterday','Avoid taxes in every situation'], correct:0, note:'Rebalancing is a disciplined way to manage drift, not a prediction tool.'},
+      {q:'What does "dollar-cost averaging" mean?', a:['Investing a fixed amount at regular intervals regardless of price','Only buying when prices are falling','Converting all holdings to cash each month'], correct:0, note:'Investing consistently over time can smooth out the effect of short-term price swings.'},
+      {q:'What is a stock\u2019s "market capitalization"?', a:["A company's share price multiplied by shares outstanding", 'The total cash a company holds in the bank', "The fee charged to trade the stock"], correct:0, note:'Market cap reflects the total market value of a company\u2019s outstanding shares.'},
+      {q:'Why might an investor hold both stocks and bonds?', a:['To balance growth potential against stability','Because bonds always outperform stocks','Because it is required by law'], correct:0, note:'Combining asset classes is a common way to manage risk relative to return.'}
     ]
   },
   {
@@ -2958,7 +3144,10 @@ const LEARNING_PATHS = [
     questions:[
       {q:'What should an emergency fund generally cover?', a:['Several months of essential expenses','Only entertainment spending','Only investment contributions'], correct:0, note:'Emergency savings protect the plan when income or expenses change unexpectedly.'},
       {q:'Which habit best supports long-term investing?', a:['Automating contributions after essentials are covered','Waiting for perfect market timing','Using every dollar of credit available'], correct:0, note:'Automation helps consistency, which is often more useful than trying to time markets.'},
-      {q:'What does a savings rate measure?', a:['The share of income set aside for future goals','The interest rate on a credit card','The annual fee of an ETF'], correct:0, note:'A healthy savings rate is one of the biggest drivers of goal progress.'}
+      {q:'What does a savings rate measure?', a:['The share of income set aside for future goals','The interest rate on a credit card','The annual fee of an ETF'], correct:0, note:'A healthy savings rate is one of the biggest drivers of goal progress.'},
+      {q:'What is a common purpose of the "50/30/20" budgeting guideline?', a:['A rough split between needs, wants, and savings','A tax filing deadline reminder','A required minimum credit score'], correct:0, note:'It is a starting-point framework, not a rule that fits every household exactly.'},
+      {q:'Why track recurring subscriptions?', a:['Small recurring costs can add up significantly over a year','Subscriptions always count as investments','Tracking them is required for tax purposes'], correct:0, note:'Recurring costs are easy to overlook but can meaningfully affect a budget.'},
+      {q:'What is "lifestyle inflation"?', a:['Spending rising to match income as it grows', 'Prices rising due to inflation alone', 'A discount offered on luxury goods'], correct:0, note:'Letting spending rise in step with income can quietly slow down savings progress.'}
     ]
   },
   {
@@ -2968,7 +3157,10 @@ const LEARNING_PATHS = [
     questions:[
       {q:'Why are tax-advantaged retirement accounts useful?', a:['They can improve after-tax compounding','They make every investment risk-free','They remove the need for diversification'], correct:0, note:'Tax treatment can help compounding, but risk management still matters.'},
       {q:'What is sequence-of-returns risk?', a:['The risk that early retirement losses hurt withdrawals','The risk of owning too many bonds while young','The fee charged by a brokerage account'], correct:0, note:'Early losses during withdrawals can matter more than the same average return arriving in a different order.'},
-      {q:'What can increasing contributions do?', a:['Improve the odds of reaching a goal without relying only on returns','Guarantee retirement by a specific date','Make inflation harmless'], correct:0, note:'Contribution rate is one of the levers users can directly control.'}
+      {q:'What can increasing contributions do?', a:['Improve the odds of reaching a goal without relying only on returns','Guarantee retirement by a specific date','Make inflation harmless'], correct:0, note:'Contribution rate is one of the levers users can directly control.'},
+      {q:'What is a common purpose of a "target-date fund"?', a:['Automatically shift toward a more conservative mix as a date approaches','Guarantee a fixed payout at retirement','Track a single company\u2019s stock price'], correct:0, note:'Target-date funds adjust their internal allocation over time based on a chosen year.'},
+      {q:'What does "withdrawal rate" refer to in retirement?', a:['The percentage of savings drawn out each year to live on','The interest rate charged on a mortgage','The tax rate applied to Social Security'], correct:0, note:'A sustainable withdrawal rate is a key factor in how long savings may last.'},
+      {q:'Why might someone delay claiming certain retirement benefits?', a:['Some benefits increase the longer they are delayed, up to a limit','Delaying always doubles the payout immediately','It has no effect on the benefit amount'], correct:0, note:'Timing choices around benefits can meaningfully change lifetime income in many systems.'}
     ]
   },
   {
@@ -2978,7 +3170,10 @@ const LEARNING_PATHS = [
     questions:[
       {q:'What is tax-loss harvesting generally intended to do?', a:['Use realized losses to offset taxable gains where rules allow','Avoid all future taxes forever','Choose the highest-fee fund'], correct:0, note:'Tax-loss harvesting is rule-sensitive and should be reviewed with a qualified tax professional.'},
       {q:'Why can asset location matter?', a:['Different account types tax income and gains differently','It changes the market price of a fund','It guarantees higher returns'], correct:0, note:'Asset location is about placing assets thoughtfully across taxable and tax-advantaged accounts.'},
-      {q:'What is a capital gain?', a:['Profit from selling an asset for more than its cost basis','A guaranteed dividend payment','A checking account fee'], correct:0, note:'Capital gains may be taxed differently depending on holding period and account type.'}
+      {q:'What is a capital gain?', a:['Profit from selling an asset for more than its cost basis','A guaranteed dividend payment','A checking account fee'], correct:0, note:'Capital gains may be taxed differently depending on holding period and account type.'},
+      {q:'What generally distinguishes a "long-term" capital gain from a "short-term" one?', a:['How long the asset was held before selling', 'The size of the company', 'Whether the asset is a stock or a bond'], correct:0, note:'Holding period is typically the key factor separating the two categories.'},
+      {q:'What is the general idea behind a "wash sale" rule?', a:['It can disallow a loss if a substantially identical asset is rebought quickly','It doubles the deduction on a realized loss','It only applies to retirement accounts'], correct:0, note:'Wash-sale rules exist to prevent claiming a loss while effectively staying in the same position.'},
+      {q:'Why might a tax-advantaged account still involve tax rules later?', a:['Some accounts tax withdrawals instead of contributions','Tax-advantaged accounts are always fully tax-free forever','They are exempt from all future regulation'], correct:0, note:'Different account types shift taxation to different points in time rather than eliminating it.'}
     ]
   },
   {
@@ -2988,7 +3183,10 @@ const LEARNING_PATHS = [
     questions:[
       {q:'What does volatility describe?', a:['How much an investment value moves over time','The exact chance of losing all money','A fund company brand name'], correct:0, note:'Volatility is movement around a return path, not the only form of risk.'},
       {q:'Why hold bonds or cash in a plan?', a:['To help manage stability, liquidity, and timeline risk','To make stocks unnecessary for everyone','To guarantee purchasing power'], correct:0, note:'Defensive assets can support liquidity and reduce portfolio swings.'},
-      {q:'What is concentration risk?', a:['Depending too heavily on one company, sector, or asset type','Owning more than one fund','Saving too much for retirement'], correct:0, note:'Concentration can make outcomes depend too much on one narrow exposure.'}
+      {q:'What is concentration risk?', a:['Depending too heavily on one company, sector, or asset type','Owning more than one fund','Saving too much for retirement'], correct:0, note:'Concentration can make outcomes depend too much on one narrow exposure.'},
+      {q:'What is "inflation risk" in the context of long-term saving?', a:['The risk that rising prices erode future purchasing power','The risk that a bank changes its logo','The risk of a stock split'], correct:0, note:'Holding too much in low-growth assets can leave savings vulnerable to inflation over decades.'},
+      {q:'What is "liquidity risk"?', a:['The risk of not being able to convert an asset to cash quickly without a loss','The risk of a stock paying too high a dividend','The risk of an index changing its name'], correct:0, note:'Illiquid assets can be harder or costlier to sell exactly when cash is needed.'},
+      {q:'Why do investors sometimes consider correlation between assets?', a:['Low or negative correlation can smooth overall portfolio swings','High correlation always improves returns','Correlation determines a fund\u2019s expense ratio'], correct:0, note:'Combining assets that do not move in lockstep is a common risk-management idea.'}
     ]
   },
   {
@@ -2998,7 +3196,10 @@ const LEARNING_PATHS = [
     questions:[
       {q:'What does an ETF usually provide?', a:['A basket of securities traded on an exchange','A bank account with FDIC insurance','A personalized tax filing service'], correct:0, note:'ETFs can offer diversified exposure, though their risk depends on what they hold.'},
       {q:'Why compare expense ratios?', a:['Costs reduce investor returns over time','The highest fee always means better performance','Fees replace the need for planning'], correct:0, note:'Lower costs are not everything, but they are one controllable input.'},
-      {q:'What should a user check before choosing an ETF?', a:['Holdings, costs, index, liquidity, and fit with the plan','Only the ticker symbol length',"Only yesterday's return"], correct:0, note:'ETF selection should connect to the broader allocation and goal.'}
+      {q:'What should a user check before choosing an ETF?', a:['Holdings, costs, index, liquidity, and fit with the plan','Only the ticker symbol length',"Only yesterday's return"], correct:0, note:'ETF selection should connect to the broader allocation and goal.'},
+      {q:'What does it mean for an ETF to "track an index"?', a:['It aims to mirror the performance of a specific benchmark','It guarantees beating the market every year','It only holds a single company\u2019s stock'], correct:0, note:'Most ETFs are built to follow an index as closely as reasonably possible, not to beat it.'},
+      {q:'How does an ETF typically differ from a traditional mutual fund?', a:['ETFs generally trade throughout the day on an exchange like a stock','ETFs can never be sold once purchased','Mutual funds always have lower fees than ETFs'], correct:0, note:'Traditional mutual funds usually price once per day, unlike exchange-traded ETFs.'},
+      {q:'What is "tracking error" in the context of an index ETF?', a:['The difference between an ETF\u2019s performance and its target index', "A mistake made when placing a trade order", 'The fee charged to open a brokerage account'], correct:0, note:'Tracking error measures how closely a fund actually follows the index it is meant to represent.'}
     ]
   }
 ];
@@ -3075,30 +3276,49 @@ function renderLearningCenter(){
   const stage = document.getElementById('quizStage');
   if(!window._activeQuiz && stage && !stage.innerHTML.trim()) startLearningQuiz(activeId, true);
 }
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+// Builds a fresh, randomized question set every time a quiz starts:
+// a random subset of the topic's question bank, in random order, with
+// each question's answer choices also shuffled — so replaying the same
+// topic doesn't just repeat the identical quiz.
+function buildQuizQuestions(path){
+  const count = Math.min(4, path.questions.length);
+  const chosen = shuffleArray(path.questions).slice(0, count);
+  return chosen.map(item=>{
+    const order = shuffleArray(item.a.map((text,i)=>({text,i})));
+    const correctIndex = order.findIndex(o=>o.i===item.correct);
+    return { q:item.q, note:item.note, a:order.map(o=>o.text), correct:correctIndex };
+  });
+}
 function startLearningQuiz(pathId, silent){
   const path = LEARNING_PATHS.find(p=>p.id===pathId) || LEARNING_PATHS[0];
   window._activeLearningPath = path.id;
-  window._activeQuiz = { pathId:path.id, index:0, correct:0, answered:false };
+  window._activeQuiz = { pathId:path.id, index:0, correct:0, answered:false, questions:buildQuizQuestions(path) };
   renderLearningQuestion();
   if(!silent) renderLearningCenter();
 }
 function renderLearningQuestion(){
   const quiz = window._activeQuiz;
-  const path = LEARNING_PATHS.find(p=>p.id===quiz.pathId);
-  const item = path.questions[quiz.index];
+  const item = quiz.questions[quiz.index];
   const stage = document.getElementById('quizStage');
   stage.innerHTML = `
     <div class="quiz-question">${escapeHtml(item.q)}</div>
     <div class="answer-grid">
       ${item.a.map((answer,i)=>`<button class="answer-btn" onclick="selectLearningAnswer(${i})">${escapeHtml(answer)}</button>`).join('')}
     </div>
-    <div class="quiz-feedback mono">Question ${quiz.index + 1} of ${path.questions.length}</div>`;
+    <div class="quiz-feedback mono">Question ${quiz.index + 1} of ${quiz.questions.length}</div>`;
 }
 function selectLearningAnswer(answerIndex){
   const quiz = window._activeQuiz;
   if(!quiz || quiz.answered) return;
-  const path = LEARNING_PATHS.find(p=>p.id===quiz.pathId);
-  const item = path.questions[quiz.index];
+  const item = quiz.questions[quiz.index];
   quiz.answered = true;
   const buttons = Array.from(document.querySelectorAll('#quizStage .answer-btn'));
   buttons.forEach((btn,i)=>{
@@ -3107,7 +3327,7 @@ function selectLearningAnswer(answerIndex){
     if(i === answerIndex && i !== item.correct) btn.classList.add('wrong');
   });
   if(answerIndex === item.correct) quiz.correct += 1;
-  const isLast = quiz.index === path.questions.length - 1;
+  const isLast = quiz.index === quiz.questions.length - 1;
   document.querySelector('#quizStage .quiz-feedback').innerHTML = `${escapeHtml(item.note)}<br><button class="btn btn-solid" style="margin-top:12px;" onclick="${isLast?'completeLearningQuiz()':'nextLearningQuestion()'}">${isLast?'Finish Quiz':'Next Question'}</button>`;
 }
 function nextLearningQuestion(){
@@ -3118,7 +3338,7 @@ function nextLearningQuestion(){
 function completeLearningQuiz(){
   const quiz = window._activeQuiz;
   const path = LEARNING_PATHS.find(p=>p.id===quiz.pathId);
-  const score = Math.round((quiz.correct / path.questions.length) * 100);
+  const score = Math.round((quiz.correct / quiz.questions.length) * 100);
   const progress = updateLearningStreak(getLearningProgress());
   const earnedXp = Math.round(path.xp * (score / 100));
   progress.xp = (progress.xp || 0) + earnedXp;
@@ -3128,7 +3348,12 @@ function completeLearningQuiz(){
   progress.completedTopics = [...(progress.completedTopics || []), path.id];
   saveLearningProgress(progress);
   window._activeQuiz = null;
-  document.getElementById('quizStage').innerHTML = `<div class="reward-callout"><strong>${path.topic} quiz complete.</strong> Score: ${score}%. XP earned: ${earnedXp}. Your streak and reward progress have been updated.</div>`;
+  document.getElementById('quizStage').innerHTML = `<div class="reward-callout"><strong>${path.topic} quiz complete.</strong> Score: ${score}%. XP earned: ${earnedXp}. Your streak and reward progress have been updated.
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-solid" onclick="startLearningQuiz('${path.id}')">Play Again — New Questions</button>
+      <button class="btn" onclick="document.getElementById('quizStage').innerHTML=''; renderLearningCenter();">Choose a Different Topic</button>
+    </div>
+  </div>`;
   renderLearningCenter();
 }
 function claimLearningReward(){
@@ -3428,6 +3653,100 @@ async function submitCheckout(){
 })();
 
 updateAccountBadge();
+renderFinancialCalendar();
+
+/* =========================================================
+   CONSTELLATION BACKGROUND
+   Drifting particles that draw a connecting line to nearby
+   neighbors — fixed behind the whole page, in the site's own
+   brass/ink palette rather than a generic neon look. Respects
+   prefers-reduced-motion by simply not animating.
+   ========================================================= */
+(function initConstellation(){
+  const canvas = document.getElementById('constellationCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let W, H, particles = [];
+  const DOT_COLOR = '138,106,46';   // brass, as an rgb triplet for use in rgba()
+  const LINE_COLOR = '34,40,47';    // ink
+  const LINK_DIST = 130;
+  const PARTICLE_COUNT_DENSITY = 18000; // 1 particle per this many px^2, capped below
+
+  function resize(){
+    W = canvas.width = canvas.offsetWidth * devicePixelRatio;
+    H = canvas.height = canvas.offsetHeight * devicePixelRatio;
+    canvas.style.width = canvas.offsetWidth + 'px';
+    const count = Math.min(70, Math.max(24, Math.floor((W*H) / (PARTICLE_COUNT_DENSITY * devicePixelRatio * devicePixelRatio))));
+    particles = Array.from({length:count}, ()=>({
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-0.5) * 0.25 * devicePixelRatio,
+      vy: (Math.random()-0.5) * 0.25 * devicePixelRatio,
+      r: (Math.random()*1.6 + 0.8) * devicePixelRatio,
+    }));
+  }
+
+  function step(){
+    ctx.clearRect(0,0,W,H);
+    for(const p of particles){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > W) p.vx *= -1;
+      if(p.y < 0 || p.y > H) p.vy *= -1;
+    }
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a = particles[i], b = particles[j];
+        const dx = a.x-b.x, dy = a.y-b.y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        const maxDist = LINK_DIST * devicePixelRatio;
+        if(dist < maxDist){
+          ctx.strokeStyle = `rgba(${LINE_COLOR},${0.10 * (1 - dist/maxDist)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+          ctx.stroke();
+        }
+      }
+    }
+    for(const p of particles){
+      ctx.fillStyle = `rgba(${DOT_COLOR},0.5)`;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    if(!reduceMotion) requestAnimationFrame(step);
+  }
+
+  resize();
+  step(); // draw once even under reduced motion, just without looping
+  if(!reduceMotion){
+    let resizeTimer;
+    window.addEventListener('resize', ()=>{
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 200);
+    });
+  }
+})();
+
+/* ---------- Scroll Reveal ----------
+   Lightweight fade/slide-in for content as it enters the viewport.
+   Respects prefers-reduced-motion via the CSS fallback rule. */
+function initScrollReveal(){
+  if(!('IntersectionObserver' in window)) return;
+  const observer = window._revealObserver || new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('in-view');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.12 });
+  window._revealObserver = observer;
+  document.querySelectorAll('.reveal:not(.in-view)').forEach(el=>observer.observe(el));
+}
+document.addEventListener('DOMContentLoaded', initScrollReveal);
+initScrollReveal();
 
 /* =========================================================
    PWA — installability + offline app shell
